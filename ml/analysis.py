@@ -17,8 +17,8 @@ def standardization_info(path):
     addiction_df, cluster_means = standardization_process(path)
     print(cluster_means)
     
-    print("Cluster Distribution:")
-    print(addiction_df['Cluster'].value_counts().sort_index()) 
+    print("\nCluster Distribution:")
+    print(f" \n{addiction_df['Cluster'].value_counts().sort_index()}") 
     #sort_index ile kişi sayısı fazla olan küme üstte yazılır
     
     
@@ -33,6 +33,6 @@ def f_test(path):
         c1 = addiction_df[addiction_df['Cluster']==1][feat]
         # c0 ve c1 birer series'dir (df degil)
         f_stat, p_val = f_oneway(c0, c1)
-        print(f"{feat:25}: F={f_stat:8.2f}, p={p_val:.2e}")
+        print(f"\n{feat:25}: F={f_stat:8.2f}, p={p_val:.2e}")
 
     # tüm kolonların f skoru ve p değeri ortaya çıkar.

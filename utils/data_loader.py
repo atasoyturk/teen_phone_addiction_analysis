@@ -9,7 +9,7 @@ def load_data(path):
         return None
     
 
-df = load_data(r"C:\Users\User\Desktop\lectures\teen_phone_addiction\teen_phone_addiction_dataset.csv")
+df = load_data(r"C:\Users\User\Desktop\lectures\teen_phone_addiction\data\teen_phone_addiction_dataset.csv")
 print(f"Data loaded successfully: {df is not None}")
 
 
