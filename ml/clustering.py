@@ -1,8 +1,3 @@
-import pandas as pd
-import numpy as np
-import plotly.express as px
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.cluster import KMeans 
 #KMeans, sklearn içinde kümeleme (clustering) algoritmalarının bulunduğu modüldür.
 #Bu modülde yer alan, K-Ortalamalar (K-Means) adlı kümeleme algoritmasıdır.
@@ -38,27 +33,7 @@ büyük değerlerle daha küçük değerleri aynı kabul etmez. aralığı fazla
 Standardizasyon ile her iki özelliği de aynı ölçeğe getiririz. Örn. gelirin 100.000 olması ile yaşın 65 olması "aynı ağırlıkta" değerlendirilir.
 '''
 
-from scipy.stats import f_oneway
-''' 
-    f testi (ANOVA), kümeler arasındaki ayırıcı faktörün (metrik) gerçekten ayırıcı mı yoksa şans eseri mi olduğunu araştırır.
-f testi sadece bir metrik için test yapar!
-H0 ve H1 hipotezi oluştururuz başta (H0 kümelerin ayırıcı faktörü arasında anlmalı fark yoktur H1 ise anlamlı fark vardır
-f_oneway iki tane çıktı üretir : f değeri ve p değeri 
-f<0.05 çıkarsa ayırıcı metrik doğruluğu yüksektir (güvenilebilir), ama >0.05 çıkarsa o metriğin ayırıcılığı şans eseri olabilir.
-Ayrıca p<0.001 çıkarsa istatiksel olarak da çıkan hipotezin doğrıluğu yüksektir
-
-'''
-from utils.data_loader import load_data
-
-def addiction_df_create(path):
-    
-    df = load_data(path)
-    
-    addiction_df = df[['Daily_Usage_Hours', 'Phone_Checks_Per_Day', 'Screen_Time_Before_Bed', 'Time_on_Social_Media']].copy()
-    addiction_df.dropna(inplace = True)
-    # kmeans.fit() kullanamdan once kesinlikle NA degerler olmaması lazım.
-
-    return addiction_df
+from ml.preprocessing import addiction_df_create
 
 
 
@@ -101,67 +76,3 @@ def standardization_process(path):
     #Cluster'e gore gruplayıp her Cluster icin, Cluster kolonu haric tüm kolonlarınıın ortalamaısnı alır
     
     return addiction_df, cluster_means
-
-def standardization_info(path):
-    
-    addiction_df, cluster_means = standardization_process(path)
-
-    cluster_means = standardization_process(path)
-    print(cluster_means)
-    
-    print("Cluster Distribution:")
-    print(addiction_df['Cluster'].value_counts().sort_index()) 
-    #sort_index ile kişi sayısı fazla olan küme üstte yazılır.
-
-
-def f_test(path):
-    
-    addiction_df, _ = standardization_process(path)  # Sadece veri lazım
-    
-    features = ['Daily_Usage_Hours', 'Phone_Checks_Per_Day', 'Screen_Time_Before_Bed', 'Time_on_Social_Media']
-    
-    for feat in features:
-        c0 = addiction_df[addiction_df['Cluster']==0][feat]
-        c1 = addiction_df[addiction_df['Cluster']==1][feat]
-        f_stat, p_val = f_oneway(c0, c1)
-        print(f"{feat:25}: F={f_stat:8.2f}, p={p_val:.2e}")
-
-
-def cluster_plots (path):
-    
-    addiction_df, _ = standardization_process(path)  # Kümelenmiş veri lazım
-    
-    addiction_df_melted = pd.melt(
-    addiction_df,
-    id_vars=['Cluster'],
-    value_vars=['Daily_Usage_Hours', 'Phone_Checks_Per_Day',
-               'Screen_Time_Before_Bed', 'Time_on_Social_Media'],
-    var_name='Feature',
-    value_name='Value'
-    )
-    #  pd.melt(),  df olan veriyi uzun formata çevirir (px ile daha rahat gorslelestirme)
-    
-    fig_addiction = px.box(
-        addiction_df_melted,
-        x = 'Feature',
-        y = 'Value', 
-        color = 'Cluster', 
-        title = 'Kümelerin Özelliklere Göre Karşılaştırılması',
-        facet_col='Feature',  
-        #facet_col ile hser özellik ayrı bir subplot'ta, Her birinin dağılımı net görülür.
-        #Küme arasındaki farklar açıkça karşılaştırılabilir.
-        hover_data=['Value'], #mouse ile uzerine gelince deger gozukur
-        
-    )
-    fig_addiction.update_yaxes(matches=None)  # Her subplot kendi ölçeğini kullanır (facet kullanımında mantıklı)
-
-    fig_addiction.update_layout(
-    xaxis_tickangle=45,
-    legend_title_text='Küme',
-    title_x=0.5  # Başlığı ortala
-    )
-    
-    fig_addiction.show()
-
-
-    
