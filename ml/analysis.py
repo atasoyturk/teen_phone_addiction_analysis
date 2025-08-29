@@ -34,3 +34,5 @@ def f_test(path):
         # c0 ve c1 birer series'dir (df degil)
         f_stat, p_val = f_oneway(c0, c1)
         print(f"{feat:25}: F={f_stat:8.2f}, p={p_val:.2e}")
+
+    # tüm kolonların f skoru ve p değeri ortaya çıkar.
