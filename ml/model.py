@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 from sklearn.ensemble import RandomForestClassifier
@@ -181,10 +182,12 @@ def random_forest_with_oversampling(X_train, X_test, y_train, y_test, oversample
     else:
         shap_values_selected = shap_values_raw[:, :, class_of_interest]
         #eğer list degil örn. 3d dizi ise [:, :, x] tüm satırlardaki(öğrenciler) tüm sutunların (features) sadece 3. sınıfı al
+        
+    if shap_values_selected.ndim == 1:
+        raise ValueError(f"SHAP values 1D geldi! Shape: {shap_values_selected.shape}. X_test: {X_test.shape}")
 
     shap_df = pd.DataFrame(shap_values_selected, columns=X_test.columns)
-    #shap_values_raw'ı df haline getirdiks
+    shap_magnitude = np.abs(shap_df).mean(axis=0)  # Series → (12,)
 
-
-    return model, feature_importance, shap_df
+    return model, feature_importance, shap_magnitude
     #Özelliklerin (feature) modeldeki göreceli önemini gösterir.

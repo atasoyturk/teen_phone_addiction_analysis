@@ -62,7 +62,7 @@ def main():
     low = (y == 0).sum()
     medium = (y == 1).sum()
     high = (y == 2).sum()
-    print(f"\nSınıf Dağılımı:")
+    print(f"\nCluster Distribution:")
     print(f"  Low (1-4): {low}")
     print(f"  Medium (4-7): {medium}")
     print(f"  High (7-10): {high}")

@@ -95,45 +95,26 @@ def cluster_plots(path):
     )
     fig_all.show()
 
-    #  Sadece daily usage ile Elbow & Silhouette
-    k_vals_pc, wcss_pc, sil_pc = clustering_by_dailyusage_for_elbow(path, range(2, 10))
-    df2 = pd.DataFrame({'K': k_vals_pc, 'WCSS': wcss_pc, 'Silhouette': sil_pc})
-
-    fig_pc = make_subplots(
-        rows=1, cols=2,
-        subplot_titles=("Elbow Method (WCSS)", "Silhouette Analysis"),
-        shared_xaxes=False,
-        horizontal_spacing=0.1
-    )
-
-    fig_pc.add_trace(go.Scatter(x=df2['K'], y=df2['WCSS'], mode='lines+markers', name='WCSS', line=dict(color='blue')), row=1, col=1)
-    fig_pc.add_trace(go.Scatter(x=df2['K'], y=df2['Silhouette'], mode='lines+markers', name='Silhouette', line=dict(color='red')), row=1, col=2)
-
-    fig_pc.update_yaxes(title_text="WCSS", row=1, col=1)
-    fig_pc.update_yaxes(title_text="Silhouette Score", row=1, col=2)
-    fig_pc.update_xaxes(title_text="K", row=1, col=1)
-    fig_pc.update_xaxes(title_text="K", row=1, col=2)
-
-    fig_pc.update_layout(
-        title_text="Optimal K Analysis: Daily Usage Hours",
-        title_x=0.5,
-        hovermode="x unified",
-        height=500,
-        template="plotly_white"
-    )
-    fig_pc.show()
 
     # 3. Kutu grafikleri: Tüm özellikler
-    print("3. Box plot for all clusters...")
     addiction_df = addiction_df_create(path)    
     df_clustered, _ = standardization_process(path, best_k)
     addiction_df['Cluster'] = df_clustered['Cluster']
     
     addiction_df = normalize_features(addiction_df)
+    
+    cluster_names = {0: 'Low Risk', 1: 'Normal', 2: 'High Addiction'}
+    cluster_colors = {
+        'Low Risk': '#1f77b4',      # Mavi
+        'Normal': '#2ca02c',        # Yeşil
+        'High Addiction': '#d62728' # Kırmızı
+    }
+    
+    addiction_df['Cluster_Label'] = addiction_df['Cluster'].map(cluster_names)
 
     melted = pd.melt(
         addiction_df,
-        id_vars=['Cluster'],
+        id_vars=['Cluster_Label'],
         
         value_vars=[
             # Usage features
@@ -162,32 +143,37 @@ def cluster_plots(path):
         melted,
         x='Feature',
         y='Value',
-        color='Cluster',
+        color='Cluster_Label',
         title='Cluster Characters',
         hover_data=['Value']
     )
     fig_box_all.update_layout(
         xaxis_tickangle=45,
         legend_title_text='Cluster',
-        title_x=0.5
+        title_x=0.5,
+        legend=dict(
+            title="User Group",
+            itemsizing='constant',
+            traceorder='normal'
+        )
     )
     fig_box_all.show()
     
     
 
-def classification_plots(X_train, X_test, y_train, y_test, method):
-    if method == "SMOTE":
+def classification_plots(X_train, X_test, y_train, y_test, method_name=""):
+    if method_name == "SMOTE":
         oversampler = SMOTE(
             sampling_strategy={0: 200, 1: 400},
             random_state=42,
             k_neighbors=5
         )
-    elif method == "SMOTEENN":
+    elif method_name == "SMOTEENN":
         oversampler = SMOTEENN(
             sampling_strategy={0: 200, 1: 400},
             random_state=42,
         )
-    elif method == "ADASYN":
+    elif method_name == "ADASYN":
         oversampler = ADASYN(
             sampling_strategy='minority',
             random_state=42,
@@ -196,13 +182,13 @@ def classification_plots(X_train, X_test, y_train, y_test, method):
     else:
         raise ValueError("method must be 'SMOTE', 'SMOTEENN', or 'ADASYN'")
 
-    _, feature_importance, shap_df = random_forest_with_oversampling(
+    _, feature_importance, shap_magnitude = random_forest_with_oversampling(
         X_train=X_train,
         X_test=X_test,
         y_train=y_train,
         y_test=y_test,
         oversampler=oversampler,
-        method_name=method,
+        method_name=method_name,
         n_estimators=100,
         max_depth=10
     )
@@ -212,7 +198,7 @@ def classification_plots(X_train, X_test, y_train, y_test, method):
         feature_importance.sort_values('Importance', ascending=True),
         x='Importance',
         y='Feature',
-        title=f'Feature Importance ({method})',
+        title=f'Feature Importance ({method_name})',
         orientation='h',
         labels={'Importance': 'Importance', 'Feature': 'Feature'},
         height=600,
@@ -220,22 +206,13 @@ def classification_plots(X_train, X_test, y_train, y_test, method):
         color_continuous_scale='Blues'
     )
     fig_oversampling.show()
-
-    # SHAP değerleri için
-    shap_magnitude = np.abs(shap_df).mean().sort_values(ascending=False)
-    # shap_magniutde pandas.Series seklinde su an
+    
     
     shap_importance_df = pd.DataFrame({
         'Feature': shap_magnitude.index,
         'Average |SHAP|': shap_magnitude.values
-    }).sort_values(by= 'Feature', ascending= False)
+    }).sort_values('Average |SHAP|', ascending= True)
 
-    fi_values = feature_importance.set_index('Feature')['Importance']
-    #'Feature' sütununu index (etiket) yaparak, 'Importance' değerlerine kolay ve temiz erişmek istiyoruz. 
-    # boylece pandas.Series  olur boylece shap_magnitude ile korelasyon yapılabilri.
-    
-    correlation = fi_values.corr(shap_magnitude)
-    print(f"\nCorrelation: {correlation:.4f}")
     
     # SHAP grafiği
     fig_shap = px.bar(
@@ -243,10 +220,11 @@ def classification_plots(X_train, X_test, y_train, y_test, method):
         x='Average |SHAP|',
         y='Feature',
         orientation='h',
-        title=f"SHAP Feature Importance (Average {method})",
+        title=f"SHAP Feature Importance (Average {method_name})",
         labels={'Average |SHAP|': 'Average |SHAP Values|', 'Feature': 'Feature'},
         color='Average |SHAP|',
         color_continuous_scale='Blues'
     )
     fig_shap.update_layout(yaxis={'categoryorder':'total ascending'})
     fig_shap.show()
+    

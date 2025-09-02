@@ -81,10 +81,15 @@ def analyze_and_plot_results(results, X_train, X_test, y_train, y_test):
     path = r"C:\Users\User\Desktop\lectures\teen_phone_addiction\data\teen_phone_addiction_dataset.csv"
     
     for name, res in results.items():
-        fi_values = res['feature_importance'].set_index('Feature')['Importance']
-        shap_magnitude = res['shap_magnitude']
+        # Feature Importance: Series yap, ama index Feature'a göre
+        fi_df = res['feature_importance']
+        fi_values = pd.Series(fi_df['Importance'].values, index=fi_df['Feature'])
 
-        correlation = fi_values.corr(shap_magnitude)
+        # SHAP Magnitude: numpy array → Series yap, aynı sırada
+        shap_magnitude = res['shap_magnitude']
+        shap_series = pd.Series(shap_magnitude, index=fi_df['Feature'])  # aynı sırada olmalı!
+
+        correlation = fi_values.corr(shap_series)
         print(f"\n{name} - Correlation (FI (Feature Importance)-SHAP Magnitude): {correlation:.4f}")
 
         classification_plots(X_train, X_test, y_train, y_test, method_name=name)
