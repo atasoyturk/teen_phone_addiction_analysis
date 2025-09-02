@@ -32,7 +32,7 @@ def f_test(path, best_k):
     
     #tek any() kullanılırsa tüm sütunların true-false degeri gorunur. Yani birden fazla oldugu icin booelan bir deger olmaz
     #any().any() olursa sütunları mantıksal OR gibi calısır ve tek bir boolean ifade verir
-    #bu sayede if clause kullanılabilir.
+    #tek boolena ifade veridig icin de, bu sayede if clause kullanılabilir.
     if addiction_df.isna().any().any():
         print("Warning: Missing values detected in the dataset. Filling with mean...")
         addiction_df = addiction_df.fillna(addiction_df.mean(numeric_only=True))

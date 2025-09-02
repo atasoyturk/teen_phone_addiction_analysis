@@ -5,7 +5,7 @@ import numpy as np
 
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
-from ml.clustering import clustering_by_all, clustering_by_phone_checks_for_elbow, clustering_by_phone_checks, standardization_process
+from ml.clustering import clustering_by_all, clustering_by_dailyusage_for_elbow, clustering_by_phone_checks, standardization_process
 from ml.model import random_forest_with_oversampling
 from utils.data_loader import load_data
 from ml.preprocessing import normalize_features, addiction_df_create
@@ -34,9 +34,9 @@ def general_plotting(df):
             custom_data=['Gender', 'Age']
         )
 
-        # Marker boyutu: yaşa göre
         size = (df['Age'] - df['Age'].min()) / (df['Age'].max() - df['Age'].min())
-        size = size * 20 + 5  # 5-25 arası
+        size = size 
+        #marker boyutu
 
         fig.update_traces(
             marker=dict(
@@ -101,7 +101,7 @@ def cluster_plots(path):
 
     # 2. Sadece Phone_Checks_Per_Day ile Elbow & Silhouette
     print("2. Sadece Phone_Checks_Per_Day ile Elbow & Silhouette analizi...")
-    k_vals_pc, wcss_pc, sil_pc = clustering_by_phone_checks_for_elbow(path, range(2, 10))
+    k_vals_pc, wcss_pc, sil_pc = clustering_by_dailyusage_for_elbow(path, range(2, 10))
     df2 = pd.DataFrame({'K': k_vals_pc, 'WCSS': wcss_pc, 'Silhouette': sil_pc})
 
     fig_pc = make_subplots(
@@ -227,31 +227,29 @@ def classification_plots(X_train, X_test, y_train, y_test, method):
 
     # SHAP değerleri için
     shap_magnitude = np.abs(shap_df).mean().sort_values(ascending=False)
+    # shap_magniutde pandas.Series seklinde su an
     
     shap_importance_df = pd.DataFrame({
-        'Özellik': shap_magnitude.index,
-        'Ortalama |SHAP|': shap_magnitude.values
-    })
-
-        # Debug kodu ekleyin:
-    print("=== Feature Importance ===")
-    print(feature_importance.head(10))
-    print("\n=== SHAP Magnitude ===") 
-    print(shap_magnitude.head(10))
+        'Feature': shap_magnitude.index,
+        'Average |SHAP|': shap_magnitude.values
+    }).sort_values(by= 'Feature', ascending= False)
 
     fi_values = feature_importance.set_index('Feature')['Importance']
+    #'Feature' sütununu index (etiket) yaparak, 'Importance' değerlerine kolay ve temiz erişmek istiyoruz. 
+    # boylece pandas.Series  olur boylece shap_magnitude ile korelasyon yapılabilri.
+    
     correlation = fi_values.corr(shap_magnitude)
     print(f"\nKorelasyon: {correlation:.4f}")
     
     # SHAP grafiği
     fig_shap = px.bar(
         shap_importance_df,
-        x='Ortalama |SHAP|',
-        y='Özellik',
+        x='Average |SHAP|',
+        y='Feature',
         orientation='h',
         title="SHAP Feature Importance (Average {method})",
-        labels={'Ortalama |SHAP|': 'Ortalama |SHAP Değeri|', 'Özellik': 'Özellik'},
-        color='Ortalama |SHAP|',
+        labels={'Average |SHAP|': 'Average |SHAP Values|', 'Feature': 'Feature'},
+        color='Average |SHAP|',
         color_continuous_scale='Blues'
     )
     fig_shap.update_layout(yaxis={'categoryorder':'total ascending'})

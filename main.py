@@ -26,7 +26,6 @@ def main():
     (supervised yani hedef değişken var (matematik notu), değerlendirme accuracy, f1-score, precision, recall)
 
     '''
-
     path = r"C:\Users\User\Desktop\lectures\teen_phone_addiction\data\teen_phone_addiction_dataset.csv"
     print(f"File exists: {os.path.exists(path)}")
     df = load_data(path)
@@ -35,14 +34,12 @@ def main():
         general_stats(df)
         general_plotting(df)
 
-        all_df, k_values, wcss, silhouette_scores, best_k = clustering_by_all(path, range(2,10))
+        _, k_values, wcss, silhouette_scores, best_k = clustering_by_all(path, range(2,10))
         best_k = k_values[silhouette_scores.index(max(silhouette_scores))]
         print(f"Optimal k: {best_k}")
         
         standardization_info(path, best_k)
         f_test(path, best_k)
-
-
 
         x = df[[
             # Usage features
@@ -62,9 +59,6 @@ def main():
             "Social_Interactions",
             
         ]]
-        #print(f"Min: {df['Addiction_Level'].min()}")
-        #print(f"Max: {df['Addiction_Level'].max()}")
-        #print(f"Unique values: {sorted(df['Addiction_Level'].unique())}")
         
         low = df[df['Addiction_Level'] <= 4.0].shape[0]
         medium = df[(df['Addiction_Level'] > 4.0) & (df['Addiction_Level'] <= 7.0)].shape[0]  # 4.0 < x <= 7.0
@@ -73,7 +67,6 @@ def main():
         print(f"Low (1-4): {low}")
         print(f"Medium (4-7): {medium}")
         print(f"High (7-10): {high}")
-
 
         y = df['Addiction_Level'].apply(lambda level: 0 if level <= 4.0 else (1 if level <= 7.0 else 2))
 

@@ -84,13 +84,30 @@ def clustering_by_all(path, k_range):
     if addiction_df.isna().any().any():
         print("Warning: Missing values detected in the dataset. Filling with mean...")
         addiction_df = addiction_df.fillna(addiction_df.mean(numeric_only=True))
+        #eğer boş hucre varsa, ortalama ile doldurur.   
+        #numeric_only=True, eğer boş hucre string bir ifade ise doldurmaz orayı
+    
+    '''
+    addiction_df.isna()
+    Her hücrede eksik değer (NaN) varsa True, yoksa False döner.
+        A      B      C
+    0  False  False  False
+    1  False   True  False
+    2  False  False   True
+    
+    İlk .any() (sütun bazında)
+    A    False
+    B     True
+    C     True
+    dtype: bool
+    
+     İkinci .any() (genel kontrol)
+    Şimdi bu Series'i alır ve "bunların arasında en az bir True var mı?" 
+    False OR True OR True = True
+    
+    '''
 
     df_pca, pca_model, scaler = apply_pca(addiction_df, n_components=2)
-
-    '''
-    scaler.transform() ile verinin her bir özelliği (feature) için z-score hesaplanır.
-    fit_transform() ile bu iki işlem tek adımda yapılır.
-    '''
 
     k_values = list(k_range)
     wcss = []
@@ -115,6 +132,7 @@ def clustering_by_all(path, k_range):
         all_labels[k] = labels  # her k için sakla
 
     best_k = k_values[silhouette_scores.index(max(silhouette_scores))]
+    #bir arraydaki max elemanın indeksi, array.index(max(array))
     addiction_df["Cluster"] = all_labels[best_k]
 
     return addiction_df,k_values, wcss, silhouette_scores, best_k
@@ -145,18 +163,14 @@ def standardization_process(path, n_clusters=3):
 
 
 
-
-
-def clustering_by_phone_checks_for_elbow(path, k_range):
-    """
-    Sadece Phone_Checks_Per_Day ile Elbow ve Silhouette analizi yapar.
-    Bu fonksiyon, optimal K seçimi için kullanılır.
-    """
+def clustering_by_dailyusage_for_elbow(path, k_range):
+    
     addiction_df = addiction_df_create(path)
     addiction_df = normalize_features(addiction_df)
 
     data = addiction_df[['Daily_Usage_Hours']].copy()
     data.dropna(inplace=True)
+    #Sadece daily usage hoursa bakarak optimal k bakıyoruz
 
     scaler = StandardScaler()
     data_scaled = scaler.fit_transform(data)
