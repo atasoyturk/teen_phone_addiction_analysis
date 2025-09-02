@@ -14,6 +14,22 @@ from sklearn.metrics import classification_report, roc_auc_score,confusion_matri
 (örneğin 95 negatif, 5 pozitif), model çoğunluk sınıfına eğilimli olur ve azınlık sınıfını yeterince öğrenemez
 '''
 from sklearn.model_selection import cross_val_score, StratifiedKFold
+'''
+Model gerçekten iyi mi, yoksa sadece şanslı mı anlamamıza yarar.
+# Veriyi böl: Train vs Test
+X_train → Model eğit → X_test ile test et → 1 skor  -----> bu test yanıltıcı olabilir.
+
+# Veriyi 5 parçaya böl:
+Parça 1,2,3,4 → Eğit → Parça 5 test → Skor 1
+Parça 1,2,3,5 → Eğit → Parça 4 test → Skor 2  
+Parça 1,2,4,5 → Eğit → Parça 3 test → Skor 3
+...
+# 5 farklı skor → Ortalama ± std
+
+(Tek test: "Bu model %97 başarılı"
+ CV ile: "Bu model 5 farklı testte %97.5±0.5 başarılı" → Çok daha güvenilir!)
+
+'''
 
 from imblearn.over_sampling import SMOTE
 '''
