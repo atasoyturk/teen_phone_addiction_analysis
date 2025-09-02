@@ -37,10 +37,6 @@ def normalize_features(df):
     df = df.copy()
     
     # log transform (çok büyük outlier’ları bastırır)
-    #bu log(1 + x) anlamına gelir.
-    #Sağa çarpık (right-skewed) verileri daha normal dağılıma yaklaştırır
-    #Çok yüksek değerler (outliers) daha makul seviyelere çekilir, Örnek: 1000 kontrol → log(1001) ≈ 6.9
-    #np.logp ile daha guvenli sonuclar --> np.logp(0) = log(1+0) = 0 (eger ki np.log olsaydı hata verirdi)
     
     if 'Phone_Checks_Per_Day' in df.columns:
         df['Phone_Checks_Per_Day'] = np.log1p(df['Phone_Checks_Per_Day'])
@@ -78,14 +74,7 @@ def apply_pca(df, n_components=2):
     # PCA uygulama
     pca = PCA(n_components=n_components, random_state=42)
     df_pca = pca.fit_transform(df_scaled)
-    #fit() : Eigenvalue ve eigenvector'leri bulur, Açıklanan varyans oranlarını hesaplar, Dönüşüm matrisini oluşturur
-    #transform(): Orijinal veriyi yeni koordinat sistemine dönüştürür, Principal Component skorlarını hesaplar
-    #Yani fit_transform() aslında PCA'nın "beyninini eğitip", sonra o eğitilmiş beyinle veriyi dönüştürme işlemidir.
-
-    #print(pca.explained_variance_ratio_.sum())
-    # yüzde kaç bilgi korunmuş
-
-    # PCA sonuçlarını dataframe olarak döndür
+    
     pca_columns = [f'PC{i+1}' for i in range(n_components)]
     df_pca = pd.DataFrame(df_pca, columns=pca_columns, index=df.index)
 

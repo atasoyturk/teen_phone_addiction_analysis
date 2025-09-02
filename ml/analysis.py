@@ -1,16 +1,6 @@
-from ml.clustering import standardization_process
 from scipy.stats import f_oneway
-''' 
-    f testi (ANOVA), kümeler arasındaki ayırıcı faktörün (metrik) gerçekten ayırıcı mı yoksa şans eseri mi olduğunu araştırır.
-f testi sadece bir metrik için test yapar!
-H0 ve H1 hipotezi oluştururuz başta (H0 kümelerin ayırıcı faktörü arasında anlmalı fark yoktur H1 ise anlamlı fark vardır
-f_oneway iki tane çıktı üretir : f değeri ve p değeri 
-f<0.05 çıkarsa ayırıcı metrik doğruluğu yüksektir (güvenilebilir), ama >0.05 çıkarsa o metriğin ayırıcılığı şans eseri olabilir.
-Ayrıca p<0.001 çıkarsa istatiksel olarak da çıkan hipotezin doğrıluğu yüksektir
-
-'''
 import pandas as pd
-from ml.preprocessing import normalize_features, apply_pca, addiction_df_create
+from ml.preprocessing import normalize_features, apply_pca, addiction_df_create, standardization_process
 from utils.plots import classification_plots, cluster_plots
 
 
@@ -32,9 +22,6 @@ def f_test(path, best_k):
     addiction_df = addiction_df_create(path)
     addiction_df = normalize_features(addiction_df)
     
-    #tek any() kullanılırsa tüm sütunların true-false degeri gorunur. Yani birden fazla oldugu icin booelan bir deger olmaz
-    #any().any() olursa sütunları mantıksal OR gibi calısır ve tek bir boolean ifade verir
-    #tek boolena ifade veridig icin de, bu sayede if clause kullanılabilir.
     if addiction_df.isna().any().any():
         print("Warning: Missing values detected in the dataset. Filling with mean...")
         addiction_df = addiction_df.fillna(addiction_df.mean(numeric_only=True))
@@ -61,17 +48,7 @@ def f_test(path, best_k):
     
     for feat in features:
         clusters_data = [addiction_df[addiction_df['Cluster'] == i][feat] for i in range(best_k)]
-        #clusters_data şu an liste halindedir, eğer bunu atarsak f_oneway 1 parametre alır ve yanlış olur (nested list)
-        '''
-        [
-          [10, 15, 12, 8, 9],      # Cluster 0'daki telefon kontrolleri  
-          [45, 50, 48, 52, 44],    # Cluster 1'deki telefon kontrolleri
-          [80, 85, 90, 88, 92]     # Cluster 2'deki telefon kontrolleri
-        ]
-        '''
-        #* operatörü listeyi "unpack" eder:
-        # f_oneway(*clsuters_data) ile Fonksiyon şunu görür: ([1,2,3], [4,5,6], [7,8,9])
-        # → 3 parametre (her biri ayrı grup) - DOĞRU!
+    
         f_stat, p_val = f_oneway(*clusters_data)
         print(f"{feat:25}: F={f_stat:.2f}, p={p_val:.2e}\n")
         
@@ -81,13 +58,11 @@ def analyze_and_plot_results(results, X_train, X_test, y_train, y_test):
     path = r"C:\Users\User\Desktop\lectures\teen_phone_addiction\data\teen_phone_addiction_dataset.csv"
     
     for name, res in results.items():
-        # Feature Importance: Series yap, ama index Feature'a göre
         fi_df = res['feature_importance']
         fi_values = pd.Series(fi_df['Importance'].values, index=fi_df['Feature'])
 
-        # SHAP Magnitude: numpy array → Series yap, aynı sırada
         shap_magnitude = res['shap_magnitude']
-        shap_series = pd.Series(shap_magnitude, index=fi_df['Feature'])  # aynı sırada olmalı!
+        shap_series = pd.Series(shap_magnitude, index=fi_df['Feature'])  
 
         correlation = fi_values.corr(shap_series)
         print(f"\n{name} - Correlation (FI (Feature Importance)-SHAP Magnitude): {correlation:.4f}")

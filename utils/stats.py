@@ -35,6 +35,6 @@ def general_stats(df):
     
     if 'Addiction_Level' in df.columns:
         avg_addiction = df['Addiction_Level'].mean()
-        high_addiction = df[df['Addiction_Level'] >= 7]  # 7-10 yüksek bağımlılık
+        high_addiction = df[df['Addiction_Level'] >= 7]  
         print(f"\nAverage addiction level score: {avg_addiction:.2f}")
         print(f"High addiction level score (7+): {len(high_addiction)} teens (%{len(high_addiction)/total*100:.1f})")

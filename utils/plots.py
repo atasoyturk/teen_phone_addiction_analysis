@@ -65,12 +65,10 @@ def general_plotting(df):
 
 def cluster_plots(path):
     
-    # 1. Tüm değişkenlerle Elbow & Silhouette
+    #1. Tüm değişkenlerle Elbow & Silhouette
     _, k_values, wcss, silhouette_scores, best_k = clustering_by_all(path, range(2, 10))
     df1 = pd.DataFrame({'K': k_values, 'WCSS': wcss, 'Silhouette': silhouette_scores})
-    #verilerin ölçekleri birbirinden farklı olduğu için, WCSS ve Silhouette Score değerleri doğrudan karşılaştırılamaz.
-    #bu yüzden mmelt yapmıyoruz.
-
+    
     fig_all = make_subplots(
         rows=1, cols=2,
         subplot_titles=("Elbow Method (WCSS)", "Silhouette Analysis"),
