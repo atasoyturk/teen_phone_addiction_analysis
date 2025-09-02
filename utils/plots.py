@@ -1,18 +1,27 @@
-# ml/plots.py
-
 import pandas as pd
 import plotly.express as px
+import numpy as np
+
+
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
 from ml.clustering import clustering_by_all, clustering_by_phone_checks_for_elbow, clustering_by_phone_checks, standardization_process
+from ml.model import random_forest_with_oversampling
 from utils.data_loader import load_data
+from ml.preprocessing import normalize_features, addiction_df_create
+
+from imblearn.over_sampling import SMOTE
+from imblearn.combine import SMOTEENN
+from imblearn.over_sampling import ADASYN
+from shap import TreeExplainer
+
+
 
 
 def general_plotting(df):
-    """
-    Genel dağılım: Exercise vs Gaming
-    """
+    
     if df is not None and 'Exercise_Hours' in df.columns:
+        
         fig = px.scatter(
             df,
             x='Exercise_Hours',
@@ -61,7 +70,7 @@ def general_plotting(df):
 def cluster_plots(path):
     
     # 1. Tüm değişkenlerle Elbow & Silhouette
-    k_values, wcss, silhouette_scores = clustering_by_all(path, range(2, 10))
+    _, k_values, wcss, silhouette_scores, best_k = clustering_by_all(path, range(2, 10))
     df1 = pd.DataFrame({'K': k_values, 'WCSS': wcss, 'Silhouette': silhouette_scores})
     #verilerin ölçekleri birbirinden farklı olduğu için, WCSS ve Silhouette Score değerleri doğrudan karşılaştırılamaz.
     #bu yüzden mmelt yapmıyoruz.
@@ -111,7 +120,7 @@ def cluster_plots(path):
     fig_pc.update_xaxes(title_text="K", row=1, col=2)
 
     fig_pc.update_layout(
-        title_text="Optimal K Analysis: Just Phone Checks per Day",
+        title_text="Optimal K Analysis: Daily Usage Hours",
         title_x=0.5,
         hovermode="x unified",
         height=500,
@@ -120,12 +129,37 @@ def cluster_plots(path):
     fig_pc.show()
 
     # 3. Kutu grafikleri: Tüm özellikler
-    print("3. Tüm özellikler için kutu grafiği...")
-    addiction_df, _ = standardization_process(path)
+    print("3. Box plot for all clusters...")
+    addiction_df = addiction_df_create(path)    
+    df_clustered, _ = standardization_process(path, best_k)
+    addiction_df['Cluster'] = df_clustered['Cluster']
+    
+    addiction_df = normalize_features(addiction_df)
+
+
     melted = pd.melt(
         addiction_df,
         id_vars=['Cluster'],
-        value_vars=['Daily_Usage_Hours', 'Phone_Checks_Per_Day', 'Screen_Time_Before_Bed', 'Time_on_Social_Media'],
+        
+        value_vars=[
+            # Usage features
+            "Daily_Usage_Hours",
+            "Phone_Checks_Per_Day",
+            "Screen_Time_Before_Bed",
+            "Time_on_Social_Media",
+            "Sleep_Hours",
+            "Exercise_Hours",
+            "Time_on_Gaming",
+            
+            # Psychological / social features
+            "Anxiety_Level",
+            "Depression_Level",
+            "Self_Esteem",
+            "Family_Communication",
+            "Social_Interactions",
+            
+        ],
+        
         var_name='Feature',
         value_name='Value'
     )
@@ -135,15 +169,90 @@ def cluster_plots(path):
         x='Feature',
         y='Value',
         color='Cluster',
-        facet_col='Feature',
         title='Kümelerin Özelliklere Göre Karşılaştırılması',
         hover_data=['Value']
     )
-    fig_box_all.update_yaxes(matches=None)  # Her subplot kendi ölçeğinde
     fig_box_all.update_layout(
         xaxis_tickangle=45,
         legend_title_text='Küme',
         title_x=0.5
     )
     fig_box_all.show()
+    
+    
 
+def classification_plots(X_train, X_test, y_train, y_test, method):
+    if method == "SMOTE":
+        oversampler = SMOTE(
+            sampling_strategy={0: 200, 1: 400},
+            random_state=42,
+            k_neighbors=5
+        )
+    elif method == "SMOTEENN":
+        oversampler = SMOTEENN(
+            sampling_strategy={0: 200, 1: 400},
+            random_state=42,
+        )
+    elif method == "ADASYN":
+        oversampler = ADASYN(
+            sampling_strategy='minority',
+            random_state=42,
+            n_neighbors=3
+        )
+    else:
+        raise ValueError("method must be 'SMOTE', 'SMOTEENN', or 'ADASYN'")
+
+    _, feature_importance, shap_df = random_forest_with_oversampling(
+        X_train=X_train,
+        X_test=X_test,
+        y_train=y_train,
+        y_test=y_test,
+        oversampler=oversampler,
+        method_name=method,
+        n_estimators=100,
+        max_depth=10
+    )
+
+    # Feature importance grafiği
+    fig_oversampling = px.bar(
+        feature_importance.sort_values('Importance', ascending=True),
+        x='Importance',
+        y='Feature',
+        title=f'Feature Importance ({method})',
+        orientation='h',
+        labels={'Importance': 'Göreceli Önem', 'Feature': 'Özellik'},
+        height=600
+    )
+    fig_oversampling.show()
+
+    # SHAP değerleri için
+    shap_magnitude = np.abs(shap_df).mean().sort_values(ascending=False)
+    
+    shap_importance_df = pd.DataFrame({
+        'Özellik': shap_magnitude.index,
+        'Ortalama |SHAP|': shap_magnitude.values
+    })
+
+        # Debug kodu ekleyin:
+    print("=== Feature Importance ===")
+    print(feature_importance.head(10))
+    print("\n=== SHAP Magnitude ===") 
+    print(shap_magnitude.head(10))
+
+    fi_values = feature_importance.set_index('Feature')['Importance']
+    correlation = fi_values.corr(shap_magnitude)
+    print(f"\nKorelasyon: {correlation:.4f}")
+    
+    # SHAP grafiği
+    fig_shap = px.bar(
+        shap_importance_df,
+        x='Ortalama |SHAP|',
+        y='Özellik',
+        orientation='h',
+        title="SHAP Feature Importance (Average {method})",
+        labels={'Ortalama |SHAP|': 'Ortalama |SHAP Değeri|', 'Özellik': 'Özellik'},
+        color='Ortalama |SHAP|',
+        color_continuous_scale='Blues'
+    )
+    fig_shap.update_layout(yaxis={'categoryorder':'total ascending'})
+    fig_shap.show()

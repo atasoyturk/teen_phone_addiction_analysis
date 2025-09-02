@@ -10,29 +10,65 @@ Ayrıca p<0.001 çıkarsa istatiksel olarak da çıkan hipotezin doğrıluğu y�
 
 '''
 import pandas as pd
+from ml.preprocessing import normalize_features, apply_pca, addiction_df_create
 
 
-def standardization_info(path):
-    
-    addiction_df, cluster_means = standardization_process(path)
-    print(cluster_means)
+def standardization_info(path, best_k):
+    df_pca, cluster_means = standardization_process(path, n_clusters=best_k)
+    print("Cluster Means:\n", cluster_means)
     
     print("\nCluster Distribution:")
-    print(f" \n{addiction_df['Cluster'].value_counts().sort_index()}") 
-    #sort_index ile kişi sayısı fazla olan küme üstte yazılır
+    distribution = df_pca['Cluster'].value_counts().sort_index()
+    print(f"\n{distribution}")
     
+    if (distribution < 2).any():
+        print("Warning: One or more clusters have fewer than 2 samples, which may cause issues in F-test.")
+
     
-def f_test(path):
+def f_test(path, best_k):
     
-    addiction_df, _ = standardization_process(path)  # Sadece veri lazım
+    addiction_df = addiction_df_create(path)
+    addiction_df = normalize_features(addiction_df)
     
-    features = ['Daily_Usage_Hours', 'Phone_Checks_Per_Day', 'Screen_Time_Before_Bed', 'Time_on_Social_Media']
+    #tek any() kullanılırsa tüm sütunların true-false degeri gorunur. Yani birden fazla oldugu icin booelan bir deger olmaz
+    #any().any() olursa sütunları mantıksal OR gibi calısır ve tek bir boolean ifade verir
+    #bu sayede if clause kullanılabilir.
+    if addiction_df.isna().any().any():
+        print("Warning: Missing values detected in the dataset. Filling with mean...")
+        addiction_df = addiction_df.fillna(addiction_df.mean(numeric_only=True))
+    
+    df_clustered, _ = standardization_process(path, n_clusters=best_k)
+    addiction_df['Cluster'] = df_clustered['Cluster']
+
+    features = [
+        "Daily_Usage_Hours",
+        "Phone_Checks_Per_Day",
+        "Screen_Time_Before_Bed",
+        "Time_on_Social_Media",
+        "Sleep_Hours",
+        "Exercise_Hours",
+        "Time_on_Gaming",
+        "Anxiety_Level",
+        "Depression_Level",
+        "Self_Esteem",
+        "Family_Communication",
+        "Social_Interactions",
+    ]
+
+    print("F-test results:\n")
     
     for feat in features:
-        c0 = addiction_df[addiction_df['Cluster']==0][feat]
-        c1 = addiction_df[addiction_df['Cluster']==1][feat]
-        # c0 ve c1 birer series'dir (df degil)
-        f_stat, p_val = f_oneway(c0, c1)
-        print(f"\n{feat:25}: F={f_stat:8.2f}, p={p_val:.2e}")
-
-    # tüm kolonların f skoru ve p değeri ortaya çıkar.
+        clusters_data = [addiction_df[addiction_df['Cluster'] == i][feat] for i in range(best_k)]
+        #clusters_data şu an liste halindedir, eğer bunu atarsak f_oneway 1 parametre alır ve yanlış olur (nested list)
+        '''
+        [
+          [10, 15, 12, 8, 9],      # Cluster 0'daki telefon kontrolleri  
+          [45, 50, 48, 52, 44],    # Cluster 1'deki telefon kontrolleri
+          [80, 85, 90, 88, 92]     # Cluster 2'deki telefon kontrolleri
+        ]
+        '''
+        #* operatörü listeyi "unpack" eder:
+        # f_oneway(*clsuters_data) ile Fonksiyon şunu görür: ([1,2,3], [4,5,6], [7,8,9])
+        # → 3 parametre (her biri ayrı grup) - DOĞRU!
+        f_stat, p_val = f_oneway(*clusters_data)
+        print(f"{feat:25}: F={f_stat:.2f}, p={p_val:.2e}\n")

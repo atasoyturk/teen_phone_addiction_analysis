@@ -68,17 +68,26 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 
 from ml.preprocessing import addiction_df_create
+from ml.preprocessing import normalize_features, apply_pca
+
 
 
 def clustering_by_all(path, k_range):
 
     # Tüm özelliklerle Elbow ve Silhouette analizi yapar.
+    #clusteringden once her zaman ölçeklendirme yapılmalıdır.
+    
+    addiction_df = addiction_df_create(path).reset_index(drop=True)
+    addiction_df = normalize_features(addiction_df) 
+    #Phone_Checks_per_Day ve Depression_Level cok baskınlık saglıyor, log transform ile outlier'şarı bastırıoruz
+    
+    if addiction_df.isna().any().any():
+        print("Warning: Missing values detected in the dataset. Filling with mean...")
+        addiction_df = addiction_df.fillna(addiction_df.mean(numeric_only=True))
 
-    addiction_df = addiction_df_create(path)
-    scaler = StandardScaler()
-    addiction_df_scaled = scaler.fit_transform(addiction_df)
+    df_pca, pca_model, scaler = apply_pca(addiction_df, n_components=2)
+
     '''
-    scaler.fit() ile verinin ortalaması 0, standart sapması 1 olacak şekilde dönüştürülür.(z-score table)
     scaler.transform() ile verinin her bir özelliği (feature) için z-score hesaplanır.
     fit_transform() ile bu iki işlem tek adımda yapılır.
     '''
@@ -86,11 +95,13 @@ def clustering_by_all(path, k_range):
     k_values = list(k_range)
     wcss = []
     silhouette_scores = []
+    all_labels = {}  # her k için label sakla
+
 
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
-        kmeans.fit(addiction_df_scaled)
-        #kmeans.fit() ile model veriye uygulanır.
+        labels = kmeans.fit_predict(df_pca) 
+        #fit_predict ile hem df'e kmeams uygular hem de etiketleri tahmin eder.
 
         wcss.append(kmeans.inertia_)
         # inertia_: toplam kare uzaklık (WCSS)
@@ -98,10 +109,42 @@ def clustering_by_all(path, k_range):
         if k == 1:
             score = 0
         else:
-            score = silhouette_score(addiction_df_scaled, kmeans.labels_)
+            score = silhouette_score(df_pca, kmeans.labels_)
+
         silhouette_scores.append(score)
-        
-    return k_values, wcss, silhouette_scores
+        all_labels[k] = labels  # her k için sakla
+
+    best_k = k_values[silhouette_scores.index(max(silhouette_scores))]
+    addiction_df["Cluster"] = all_labels[best_k]
+
+    return addiction_df,k_values, wcss, silhouette_scores, best_k
+
+
+
+def standardization_process(path, n_clusters=3):
+    
+    addiction_df = addiction_df_create(path)
+    addiction_df = normalize_features(addiction_df)
+    
+    if addiction_df.isna().any().any():
+        print("Warning: Missing values detected in the dataset. Filling with mean...")
+        addiction_df = addiction_df.fillna(addiction_df.mean(numeric_only=True))
+    
+    df_pca, _, _ = apply_pca(addiction_df, n_components=2)
+
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    labels = kmeans.fit_predict(df_pca)
+    
+    df_pca = df_pca.copy()
+    df_pca['Cluster'] = labels
+
+    cluster_means = df_pca.groupby('Cluster')[df_pca.columns[:-1]].mean()
+
+    return df_pca, cluster_means
+
+
+
+
 
 
 def clustering_by_phone_checks_for_elbow(path, k_range):
@@ -110,7 +153,9 @@ def clustering_by_phone_checks_for_elbow(path, k_range):
     Bu fonksiyon, optimal K seçimi için kullanılır.
     """
     addiction_df = addiction_df_create(path)
-    data = addiction_df[['Phone_Checks_Per_Day']].copy()
+    addiction_df = normalize_features(addiction_df)
+
+    data = addiction_df[['Daily_Usage_Hours']].copy()
     data.dropna(inplace=True)
 
     scaler = StandardScaler()
@@ -139,46 +184,34 @@ def clustering_by_phone_checks_for_elbow(path, k_range):
 def clustering_by_phone_checks(path, n_clusters=2, random_state=42):
     """
     Sadece Phone_Checks_Per_Day ile KMeans modeli kurar (final model).
+    Tüm ilgili kolonları (Daily_Usage_Hours, Phone_Checks_Per_Day,
+    Screen_Time_Before_Bed, Time_on_Social_Media) ve Cluster etiketini döndürür.
     """
     addiction_df = addiction_df_create(path)
-    by_phonechecks = addiction_df[['Phone_Checks_Per_Day']].copy()
-    by_phonechecks.dropna(inplace=True)
-    
-    scaler = StandardScaler()
-    by_phonechecks_scaled = scaler.fit_transform(by_phonechecks)
-    
-    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
-    labels = kmeans.fit_predict(by_phonechecks_scaled)
-    #kmeans.fit() ile model veriye uygulanır. kmeans.predict() ile grup etiketleri tahmin edilir.
-    #fit_predict() ile hem model eğitilir hem de etiketler tahmin edilir.
 
-    
-    sil_score = silhouette_score(by_phonechecks_scaled, labels)
-    
-    by_phonechecks_result_df = by_phonechecks.copy()
+    # Sadece Phone_Checks_Per_Day ile KMeans uygula
+    phone_checks = addiction_df[['Phone_Checks_Per_Day']].copy()
+    phone_checks.dropna(inplace=True)
+
+    scaler = StandardScaler()
+    phone_checks_scaled = scaler.fit_transform(phone_checks)
+
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
+    labels = kmeans.fit_predict(phone_checks_scaled)
+
+    sil_score = silhouette_score(phone_checks_scaled, labels)
+
+    # Cluster kolonunu orijinal dataframe'e ekle
+    by_phonechecks_result_df = addiction_df[['Daily_Usage_Hours',
+                                             'Phone_Checks_Per_Day',
+                                             'Screen_Time_Before_Bed',
+                                             'Time_on_Social_Media']].copy()
     by_phonechecks_result_df['Cluster'] = labels
-    
+
     print(f"Clustering is applied only by Phone_Checks_Per_Day.")
     print(f"Silhouette Score: {sil_score:.3f}")
-    
-    return by_phonechecks_result_df, sil_score, kmeans, scaler
+
+    # ✅ Sadece clusterlı dataframe döndür
+    return by_phonechecks_result_df
 
 
-def standardization_process(path):
-    """
-    Tüm özelliklerle KMeans (K=2) uygular, kümelenmiş veri ve ortalama döner.
-    """
-    addiction_df = addiction_df_create(path)
-    
-    scaler = StandardScaler()
-    addiction_df_scaled = scaler.fit_transform(addiction_df)
-    
-    kmeans = KMeans(n_clusters=2, random_state=42, n_init=10)
-    labels = kmeans.fit_predict(addiction_df_scaled)
-    
-    addiction_df = addiction_df.copy()
-    addiction_df['Cluster'] = labels
-    
-    cluster_means = addiction_df.groupby('Cluster')[addiction_df.columns[:-1]].mean()
-    
-    return addiction_df, cluster_means
