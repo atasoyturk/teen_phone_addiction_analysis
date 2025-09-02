@@ -183,7 +183,7 @@ def random_forest_with_oversampling(X_train, X_test, y_train, y_test, oversample
         #eğer list degil örn. 3d dizi ise [:, :, x] tüm satırlardaki(öğrenciler) tüm sutunların (features) sadece 3. sınıfı al
 
     shap_df = pd.DataFrame(shap_values_selected, columns=X_test.columns)
-    #shap_values_raw'ı df haline getirdik
+    #shap_values_raw'ı df haline getirdiks
 
 
     return model, feature_importance, shap_df

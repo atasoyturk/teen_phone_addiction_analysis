@@ -11,6 +11,8 @@ Ayrıca p<0.001 çıkarsa istatiksel olarak da çıkan hipotezin doğrıluğu y�
 '''
 import pandas as pd
 from ml.preprocessing import normalize_features, apply_pca, addiction_df_create
+from utils.plots import classification_plots, cluster_plots
+
 
 
 def standardization_info(path, best_k):
@@ -72,3 +74,19 @@ def f_test(path, best_k):
         # → 3 parametre (her biri ayrı grup) - DOĞRU!
         f_stat, p_val = f_oneway(*clusters_data)
         print(f"{feat:25}: F={f_stat:.2f}, p={p_val:.2e}\n")
+        
+
+def analyze_and_plot_results(results, X_train, X_test, y_train, y_test):
+
+    path = r"C:\Users\User\Desktop\lectures\teen_phone_addiction\data\teen_phone_addiction_dataset.csv"
+    
+    for name, res in results.items():
+        fi_values = res['feature_importance'].set_index('Feature')['Importance']
+        shap_magnitude = res['shap_magnitude']
+
+        correlation = fi_values.corr(shap_magnitude)
+        print(f"\n{name} - Correlation (FI (Feature Importance)-SHAP Magnitude): {correlation:.4f}")
+
+        classification_plots(X_train, X_test, y_train, y_test, method_name=name)
+    
+    cluster_plots(path)

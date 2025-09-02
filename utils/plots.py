@@ -34,14 +34,10 @@ def general_plotting(df):
             custom_data=['Gender', 'Age']
         )
 
-        size = (df['Age'] - df['Age'].min()) / (df['Age'].max() - df['Age'].min())
-        size = size 
-        #marker boyutu
-
         fig.update_traces(
             marker=dict(
                 color=df['Gender'].map({'Male': 'blue', 'Female': 'pink', 'Other': 'green'}),
-                size=size,
+                size=10,
                 sizemode='area',
                 opacity=0.6,
                 line=dict(width=1, color='black')
@@ -86,7 +82,7 @@ def cluster_plots(path):
     fig_all.add_trace(go.Scatter(x=df1['K'], y=df1['Silhouette'], mode='lines+markers', name='Silhouette', line=dict(color='red')), row=1, col=2)
 
     fig_all.update_yaxes(title_text="WCSS", row=1, col=1)
-    fig_all.update_yaxes(title_text="Silhouette Score", range=[0.10, 0.25], row=1, col=2)
+    fig_all.update_yaxes(title_text="Silhouette Score", row=1, col=2)
     fig_all.update_xaxes(title_text="K", row=1, col=1)
     fig_all.update_xaxes(title_text="K", row=1, col=2)
 
@@ -99,8 +95,7 @@ def cluster_plots(path):
     )
     fig_all.show()
 
-    # 2. Sadece Phone_Checks_Per_Day ile Elbow & Silhouette
-    print("2. Sadece Phone_Checks_Per_Day ile Elbow & Silhouette analizi...")
+    #  Sadece daily usage ile Elbow & Silhouette
     k_vals_pc, wcss_pc, sil_pc = clustering_by_dailyusage_for_elbow(path, range(2, 10))
     df2 = pd.DataFrame({'K': k_vals_pc, 'WCSS': wcss_pc, 'Silhouette': sil_pc})
 
@@ -136,7 +131,6 @@ def cluster_plots(path):
     
     addiction_df = normalize_features(addiction_df)
 
-
     melted = pd.melt(
         addiction_df,
         id_vars=['Cluster'],
@@ -169,12 +163,12 @@ def cluster_plots(path):
         x='Feature',
         y='Value',
         color='Cluster',
-        title='Kümelerin Özelliklere Göre Karşılaştırılması',
+        title='Cluster Characters',
         hover_data=['Value']
     )
     fig_box_all.update_layout(
         xaxis_tickangle=45,
-        legend_title_text='Küme',
+        legend_title_text='Cluster',
         title_x=0.5
     )
     fig_box_all.show()
@@ -220,8 +214,10 @@ def classification_plots(X_train, X_test, y_train, y_test, method):
         y='Feature',
         title=f'Feature Importance ({method})',
         orientation='h',
-        labels={'Importance': 'Göreceli Önem', 'Feature': 'Özellik'},
-        height=600
+        labels={'Importance': 'Importance', 'Feature': 'Feature'},
+        height=600,
+        color = 'Importance',
+        color_continuous_scale='Blues'
     )
     fig_oversampling.show()
 
@@ -239,7 +235,7 @@ def classification_plots(X_train, X_test, y_train, y_test, method):
     # boylece pandas.Series  olur boylece shap_magnitude ile korelasyon yapılabilri.
     
     correlation = fi_values.corr(shap_magnitude)
-    print(f"\nKorelasyon: {correlation:.4f}")
+    print(f"\nCorrelation: {correlation:.4f}")
     
     # SHAP grafiği
     fig_shap = px.bar(
@@ -247,7 +243,7 @@ def classification_plots(X_train, X_test, y_train, y_test, method):
         x='Average |SHAP|',
         y='Feature',
         orientation='h',
-        title="SHAP Feature Importance (Average {method})",
+        title=f"SHAP Feature Importance (Average {method})",
         labels={'Average |SHAP|': 'Average |SHAP Values|', 'Feature': 'Feature'},
         color='Average |SHAP|',
         color_continuous_scale='Blues'
