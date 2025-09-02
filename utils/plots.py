@@ -5,7 +5,7 @@ import numpy as np
 
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
-from ml.clustering import clustering_by_all, clustering_by_dailyusage_for_elbow, clustering_by_phone_checks, standardization_process
+from ml.clustering import clustering_by_all, standardization_process
 from ml.model import random_forest_with_oversampling
 from utils.data_loader import load_data
 from ml.preprocessing import normalize_features, addiction_df_create

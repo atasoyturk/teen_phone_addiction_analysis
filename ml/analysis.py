@@ -1,6 +1,7 @@
 from scipy.stats import f_oneway
 import pandas as pd
-from ml.preprocessing import normalize_features, apply_pca, addiction_df_create, standardization_process
+from ml.preprocessing import normalize_features, apply_pca, addiction_df_create
+from ml.clustering import standardization_process
 from utils.plots import classification_plots, cluster_plots
 
 
