@@ -20,7 +20,7 @@ This project analyzes smartphone usage patterns and addiction levels among 3,000
 
 * Age Range: 13-19 years
 
-* Sample Size: 3,000 teenagers
+* Sample Size: 3,000 teenagers (simulated teenagers)
 
 * Average Addiction Score: 8.88/10
 
