@@ -2,7 +2,7 @@
 A comprehensive machine learning analysis of smartphone addiction patterns among teenagers using clustering techniques and predictive modeling.
 
 ## Project Overview
-This project analyzes smartphone usage patterns and addiction levels among 3,000 teenagers aged 13-19. The analysis employs various machine learning techniques including clustering, classification, and feature importance analysis to understand the factors contributing to phone addiction.
+This project analyzes smartphone usage patterns and addiction levels among 3,000 teenagers aged 13-19 (simulated data). The analysis employs various machine learning techniques including clustering, classification, and feature importance analysis to understand the factors contributing to phone addiction.
 
 ## Key Findings
 ### General Statistics
