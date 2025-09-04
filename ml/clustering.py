@@ -53,7 +53,7 @@ def clustering_by_all(path, k_range):
 
 
 
-def standardization_process(path, n_clusters=3):
+def standardization_process(path, n_clusters):
     
     addiction_df = addiction_df_create(path)
     addiction_df = normalize_features(addiction_df)
