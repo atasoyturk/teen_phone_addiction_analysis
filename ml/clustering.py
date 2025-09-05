@@ -8,15 +8,17 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 
 from ml.preprocessing import addiction_df_create
-from ml.preprocessing import normalize_features, apply_pca
+from ml.preprocessing import feature_histogram, apply_pca
 
 
 
 def clustering_by_all(path, k_range):
 
     addiction_df = addiction_df_create(path).reset_index(drop=True)
-    addiction_df = normalize_features(addiction_df) 
-    #Phone_Checks_per_Day ve Depression_Level cok baskınlık saglıyor, log transform ile outlier'şarı bastırıoruz
+    feature_histogram(addiction_df)
+    #non of them right skewed graph, no need to log1p transformation.
+
+    #addiction_df = normalize_features(addiction_df) 
     
     if addiction_df.isna().any().any():
         print("Warning: Missing values detected in the dataset. Filling with mean...")
@@ -56,7 +58,7 @@ def clustering_by_all(path, k_range):
 def standardization_process(path, n_clusters):
     
     addiction_df = addiction_df_create(path)
-    addiction_df = normalize_features(addiction_df)
+    #addiction_df = normalize_features(addiction_df)
     
     if addiction_df.isna().any().any():
         print("Warning: Missing values detected in the dataset. Filling with mean...")

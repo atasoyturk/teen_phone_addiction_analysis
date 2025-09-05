@@ -8,7 +8,7 @@ from plotly.subplots import make_subplots
 from ml.clustering import clustering_by_all, standardization_process
 from ml.model import random_forest_with_oversampling
 from utils.data_loader import load_data
-from ml.preprocessing import normalize_features, addiction_df_create
+from ml.preprocessing import  addiction_df_create
 
 from imblearn.over_sampling import SMOTE
 from imblearn.combine import SMOTEENN
@@ -99,7 +99,7 @@ def cluster_plots(path):
     df_clustered, _ = standardization_process(path, best_k)
     addiction_df['Cluster'] = df_clustered['Cluster']
     
-    addiction_df = normalize_features(addiction_df)
+    #addiction_df = normalize_features(addiction_df)
     
     cluster_names = {0: 'Low Risk', 1: 'Normal', 2: 'High Addiction'}
     cluster_colors = {

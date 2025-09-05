@@ -3,6 +3,8 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
+import matplotlib as plt
+import seaborn as sns
 
 def addiction_df_create(path):
     
@@ -31,9 +33,32 @@ def addiction_df_create(path):
     
     return addiction_df
 
+def feature_histogram(addiction_df):
+    features = [
+        # Usage features
+        "Daily_Usage_Hours",
+        "Phone_Checks_Per_Day",
+        "Screen_Time_Before_Bed",
+        "Time_on_Social_Media",
+        "Sleep_Hours",
+        "Exercise_Hours",
+        "Time_on_Gaming",
+        
+        # Psychological / social features
+        "Anxiety_Level",
+        "Depression_Level",
+        "Self_Esteem",
+        "Family_Communication",
+        "Social_Interactions",
+        
+    ]
+    addiction_df[features].hist(bins=20, figsize=(12, 8))
+    plt.show()
 
 
-def normalize_features(df):
+
+
+#def normalize_features(df):
     df = df.copy()
     
     # log transform (çok büyük outlier’ları bastırır)
