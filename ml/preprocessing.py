@@ -6,54 +6,35 @@ import numpy as np
 import matplotlib as plt
 import seaborn as sns
 
-def addiction_df_create(path):
+def addiction_df_create(path, features):
     
     df = load_data(path)
-    features = [
-        # Usage features
-        "Daily_Usage_Hours",
-        "Phone_Checks_Per_Day",
-        "Screen_Time_Before_Bed",
-        "Time_on_Social_Media",
-        "Sleep_Hours",
-        "Exercise_Hours",
-        "Time_on_Gaming",
-        
-        # Psychological / social features
-        "Anxiety_Level",
-        "Depression_Level",
-        "Self_Esteem",
-        "Family_Communication",
-        "Social_Interactions",
-        
-    ]
-
+    
     addiction_df = df[features].copy()
     addiction_df.dropna(inplace=True)
     
     return addiction_df
 
-def feature_histogram(addiction_df):
-    features = [
-        # Usage features
-        "Daily_Usage_Hours",
-        "Phone_Checks_Per_Day",
-        "Screen_Time_Before_Bed",
-        "Time_on_Social_Media",
-        "Sleep_Hours",
-        "Exercise_Hours",
-        "Time_on_Gaming",
-        
-        # Psychological / social features
-        "Anxiety_Level",
-        "Depression_Level",
-        "Self_Esteem",
-        "Family_Communication",
-        "Social_Interactions",
-        
-    ]
+
+
+def feature_corr(df, features):
+    
+    #firstly, i should check the correlations between addiction metrics, if there exist higher values then 0.8, the metrics with high f score should be stay in df
+    corr = df[features].corr()
+    sns.heatmap(corr, annot=True, cmap='coolwarm', fmt= ".2f")
+    plt.title("Addiction Features correlation matrix")
+    plt.show()
+    
+    #after the graph, i see all of them have unique distinctiveness, so addiction metrics stay same for now.
+
+
+
+def feature_histogram(addiction_df, features):
+    
     addiction_df[features].hist(bins=20, figsize=(12, 8))
     plt.show()
+    #non of them right skewed graph, no need to log1p transformation.
+
 
 
 

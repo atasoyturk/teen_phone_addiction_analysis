@@ -17,7 +17,7 @@ pio.renderers.default = "browser"
 
 def main():
     
-    path = r"C:\Users\User\Desktop\lectures\teen_phone_addiction\data\teen_phone_addiction_dataset.csv"
+    path = r"C:\Users\User\Desktop\lectures\staj\machine_learning\teen_phone_addiction\data\teen_phone_addiction_dataset.csv"
     print(f"File exists: {os.path.exists(path)}")
     df = load_data(path)
     
@@ -32,14 +32,8 @@ def main():
 
     print("\nClustering Analysis")
     print("=" * 60)
-    _, _, _, silhouette_scores, best_k = clustering_by_all(path, range(2, 10))
-    best_k = best_k  
-    print(f"Optimal k would be : {best_k}")
-
-    standardization_info(path, best_k)
-    f_test(path, best_k)
-
-    feature_columns = [
+    
+    features = [
         # Usage Metrics
         "Daily_Usage_Hours",
         "Phone_Checks_Per_Day",
@@ -55,8 +49,17 @@ def main():
         "Family_Communication",
         "Social_Interactions",
     ]
+    
+    _, _, _, silhouette_scores, best_k = clustering_by_all(path, features, range(2, 10))
+    best_k = best_k  
+    print(f"Optimal k would be : {best_k}")
 
-    x = df[feature_columns]
+    standardization_info(path, best_k)
+    f_test(path, best_k)
+
+    
+
+    x = df[features]
     y = df['Addiction_Level'].apply(lambda level: 0 if level <= 4.0 else (1 if level <= 7.0 else 2))
 
     low = (y == 0).sum()

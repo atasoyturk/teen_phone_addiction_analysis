@@ -8,15 +8,16 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 
 from ml.preprocessing import addiction_df_create
-from ml.preprocessing import feature_histogram, apply_pca
+from ml.preprocessing import feature_histogram, feature_corr, apply_pca
 
 
 
-def clustering_by_all(path, k_range):
+def clustering_by_all(path, features, k_range):
 
-    addiction_df = addiction_df_create(path).reset_index(drop=True)
-    feature_histogram(addiction_df)
-    #non of them right skewed graph, no need to log1p transformation.
+    addiction_df = addiction_df_create(path, features).reset_index(drop=True)
+    
+    feature_corr(addiction_df, features)
+    feature_histogram(addiction_df, features)
 
     #addiction_df = normalize_features(addiction_df) 
     
