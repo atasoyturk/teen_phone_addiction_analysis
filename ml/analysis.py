@@ -1,6 +1,6 @@
 from scipy.stats import f_oneway
 import pandas as pd
-from ml.preprocessing import normalize_features, apply_pca, addiction_df_create
+from ml.preprocessing import  apply_pca, addiction_df_create
 from ml.clustering import standardization_process
 from utils.plots import classification_plots, cluster_plots
 
@@ -21,7 +21,7 @@ def standardization_info(path, best_k):
 def f_test(path, best_k):
     
     addiction_df = addiction_df_create(path)
-    addiction_df = normalize_features(addiction_df)
+    #addiction_df = normalize_features(addiction_df)
     
     if addiction_df.isna().any().any():
         print("Warning: Missing values detected in the dataset. Filling with mean...")

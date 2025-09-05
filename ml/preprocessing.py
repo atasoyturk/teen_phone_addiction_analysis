@@ -80,23 +80,10 @@ def feature_histogram(addiction_df):
 
 def apply_pca(df, n_components=2):
     
-    '''
-    PCA (Principal Component Analysis)
-    PCA, boyut azaltma ve veri sıkıştırma tekniğidir. Yüksek boyutlu veriyi daha az boyutta, ama en önemli bilgileri koruyarak temsil eder.
-    '''
-    
-    #PCA varyansa dayalı çalıştığı için büyük değerler baskın olur. O yüzden scale edilmelidir.
+    #PCA works with variance so datas should be scaled. If not, big metrics will be dominate in pca
     scaler = StandardScaler()
     df_scaled = scaler.fit_transform(df)
 
-    '''
-    Principal Components (Ana Bileşenler)
-
-    PC1: Verinin en çok değiştiği yön (en fazla bilgi)
-    PC2: PC1'e dik, ikinci en çok bilgi
-    PC3, PC4... devam eder
-    '''
-    # PCA uygulama
     pca = PCA(n_components=n_components, random_state=42)
     df_pca = pca.fit_transform(df_scaled)
     
