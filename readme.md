@@ -23,6 +23,7 @@ This project analyzes smartphone usage patterns and addiction levels among 3,000
 Optimal Clusters: 3 clusters identified using K-means
 
 * Cluster Distribution:
+
 Cluster 0: 1027 teens (34.2%)
 
 Cluster 1: 923 teens (30.8%)
