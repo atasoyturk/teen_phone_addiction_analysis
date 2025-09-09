@@ -6,10 +6,11 @@ import numpy as np
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
 from ml.clustering import clustering_by_all, standardization_process
-from ml.model import random_forest_with_oversampling
+from ml.model import random_forest_with_oversampling, random_forest_cost_sensitive
 from utils.data_loader import load_data
 from ml.preprocessing import  addiction_df_create
 
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from imblearn.over_sampling import SMOTE
 from imblearn.combine import SMOTEENN
 from imblearn.over_sampling import ADASYN
@@ -63,12 +64,10 @@ def general_plotting(df):
         fig.show()
 
 
-def cluster_plots(path):
-    
-    #1. Tüm değişkenlerle Elbow & Silhouette
-    _, k_values, wcss, silhouette_scores, best_k = clustering_by_all(path, range(2, 10))
+def cluster_plots(path, features, k_values, wcss, silhouette_scores, best_k, df_clustered):
+
     df1 = pd.DataFrame({'K': k_values, 'WCSS': wcss, 'Silhouette': silhouette_scores})
-    
+
     fig_all = make_subplots(
         rows=1, cols=2,
         subplot_titles=("Elbow Method (WCSS)", "Silhouette Analysis"),
@@ -95,60 +94,46 @@ def cluster_plots(path):
 
 
     # 3. Kutu grafikleri: Tüm özellikler
-    addiction_df = addiction_df_create(path)    
-    df_clustered, _ = standardization_process(path, best_k)
+    addiction_df = addiction_df_create(path, features)
     addiction_df['Cluster'] = df_clustered['Cluster']
-    
+
     #addiction_df = normalize_features(addiction_df)
-    
+
     cluster_names = {0: 'Low Risk', 1: 'Normal', 2: 'High Addiction'}
     cluster_colors = {
-        'Low Risk': '#1f77b4',      # Mavi
-        'Normal': '#2ca02c',        # Yeşil
-        'High Addiction': '#d62728' # Kırmızı
+        'Low Risk': '#1f77b4',
+        'Normal': '#2ca02c',
+        'High Addiction': '#d62728'
     }
-    
+
     addiction_df['Cluster_Label'] = addiction_df['Cluster'].map(cluster_names)
 
+    scaler = MinMaxScaler()
+    addiction_df_normalized = addiction_df.copy()
+    addiction_df_normalized[features] = scaler.fit_transform(addiction_df[features])
+
     melted = pd.melt(
-        addiction_df,
+        addiction_df_normalized,
         id_vars=['Cluster_Label'],
-        
-        value_vars=[
-            # Usage features
-            "Daily_Usage_Hours",
-            "Phone_Checks_Per_Day",
-            "Screen_Time_Before_Bed",
-            "Time_on_Social_Media",
-            "Sleep_Hours",
-            "Exercise_Hours",
-            "Time_on_Gaming",
-            
-            # Psychological / social features
-            "Anxiety_Level",
-            "Depression_Level",
-            "Self_Esteem",
-            "Family_Communication",
-            "Social_Interactions",
-            
-        ],
-        
+        value_vars=features,
         var_name='Feature',
-        value_name='Value'
+        value_name='Normalized Value'
     )
-    
+
     fig_box_all = px.box(
         melted,
         x='Feature',
-        y='Value',
+        y='Normalized Value',
         color='Cluster_Label',
-        title='Cluster Characters',
-        hover_data=['Value']
+        title='Cluster Characteristics (Normalized 0-1)',
+        hover_data=['Normalized Value']
     )
     fig_box_all.update_layout(
         xaxis_tickangle=45,
-        legend_title_text='Cluster',
+        legend_title_text='User Group',
         title_x=0.5,
+        yaxis_title='Normalized Value (0-1)',
+
         legend=dict(
             title="User Group",
             itemsizing='constant',
@@ -159,39 +144,9 @@ def cluster_plots(path):
     
     
 
-def classification_plots(X_train, X_test, y_train, y_test, method_name=""):
-    if method_name == "SMOTE":
-        oversampler = SMOTE(
-            sampling_strategy={0: 200, 1: 400},
-            random_state=42,
-            k_neighbors=5
-        )
-    elif method_name == "SMOTEENN":
-        oversampler = SMOTEENN(
-            sampling_strategy={0: 200, 1: 400},
-            random_state=42,
-        )
-    elif method_name == "ADASYN":
-        oversampler = ADASYN(
-            sampling_strategy='minority',
-            random_state=42,
-            n_neighbors=3
-        )
-    else:
-        raise ValueError("method must be 'SMOTE', 'SMOTEENN', or 'ADASYN'")
+def classification_plots(X_train, X_test, y_train, y_test, method_name="", feature_importance=None, shap_magnitude=None):
 
-    _, feature_importance, shap_magnitude = random_forest_with_oversampling(
-        X_train=X_train,
-        X_test=X_test,
-        y_train=y_train,
-        y_test=y_test,
-        oversampler=oversampler,
-        method_name=method_name,
-        n_estimators=100,
-        max_depth=10
-    )
-
-    # Feature importance grafiği
+    # Feature importance graph
     fig_oversampling = px.bar(
         feature_importance.sort_values('Importance', ascending=True),
         x='Importance',
@@ -204,15 +159,23 @@ def classification_plots(X_train, X_test, y_train, y_test, method_name=""):
         color_continuous_scale='Blues'
     )
     fig_oversampling.show()
-    
-    
-    shap_importance_df = pd.DataFrame({
-        'Feature': shap_magnitude.index,
-        'Average |SHAP|': shap_magnitude.values
-    }).sort_values('Average |SHAP|', ascending= True)
 
-    
-    # SHAP grafiği
+    #shap_magnitude may be form of pandas series or numpy array depending on python version
+    #I have used shap_df.abs().mean(axis=0) in model.py to get shap_magnitude as pandas series but it may not work in all versions
+    if hasattr(shap_magnitude, 'index'):
+
+        shap_importance_df = pd.DataFrame({
+            'Feature': shap_magnitude.index,
+            'Average |SHAP|': shap_magnitude.values
+        }).sort_values('Average |SHAP|', ascending=True)
+    else:
+
+        shap_importance_df = pd.DataFrame({
+            'Feature': feature_importance['Feature'].values,
+            'Average |SHAP|': shap_magnitude
+        }).sort_values('Average |SHAP|', ascending=True)
+
+    # SHAP graph
     fig_shap = px.bar(
         shap_importance_df,
         x='Average |SHAP|',

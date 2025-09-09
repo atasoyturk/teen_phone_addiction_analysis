@@ -3,12 +3,8 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
 
-import plotly.express as px
-import plotly.graph_objects as go
-import plotly.subplots as sp
-
-from ml.preprocessing import addiction_df_create
-from ml.preprocessing import feature_histogram, feature_corr, apply_pca
+from .preprocessing import addiction_df_create
+from .preprocessing import feature_histogram, feature_corr, apply_pca
 
 
 
@@ -26,7 +22,7 @@ def clustering_by_all(path, features, k_range):
         addiction_df = addiction_df.fillna(addiction_df.mean(numeric_only=True))
         
     
-    df_pca, pca_model, scaler = apply_pca(addiction_df, n_components=2)
+    df_pca, _, _ = apply_pca(addiction_df, n_components=2)
 
     k_values = list(k_range)
     wcss = []
@@ -51,14 +47,16 @@ def clustering_by_all(path, features, k_range):
 
     best_k = k_values[silhouette_scores.index(max(silhouette_scores))]
     addiction_df["Cluster"] = all_labels[best_k]
-
-    return addiction_df,k_values, wcss, silhouette_scores, best_k
-
-
-
-def standardization_process(path, n_clusters):
     
-    addiction_df = addiction_df_create(path)
+    df_pca["Cluster"] = addiction_df["Cluster"].values
+
+    return addiction_df,k_values, wcss, silhouette_scores, best_k, df_pca
+
+
+
+def standardization_process(path, features, n_clusters):
+    
+    addiction_df = addiction_df_create(path, features).reset_index(drop=True)
     #addiction_df = normalize_features(addiction_df)
     
     if addiction_df.isna().any().any():

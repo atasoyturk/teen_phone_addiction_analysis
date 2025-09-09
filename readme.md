@@ -1,147 +1,173 @@
 # Teen Phone Addiction Analysis
-A comprehensive machine learning analysis of smartphone addiction patterns among teenagers using clustering techniques and predictive modeling.
+A comprehensive machine learning analysis of smartphone addiction patterns among teenagers using clustering techniques and predictive modeling with emphasis on handling class imbalance and model reliability.
 
 ## Project Overview
-This project analyzes smartphone usage patterns and addiction levels among 3,000 teenagers aged 13-19. The analysis employs various machine learning techniques including clustering, classification, and feature importance analysis to understand the factors contributing to phone addiction.
+This project analyzes smartphone usage patterns and addiction levels among 3,000 teenagers aged 13-19 (simulated data). The analysis employs various machine learning techniques including clustering, classification, and feature importance analysis to understand the factors contributing to phone addiction, with special attention to overfitting prevention and model interpretability.
 
 ## Key Findings
 ### General Statistics
 
 * Average Daily Phone Usage: 5.02 hours
 
-* High Addiction Rate: 86% of teens (2,581 out of 3,000) have addiction scores ≥7
+* High Addiction Rate: 85.1% of teens (2,554 out of 3,000) have addiction scores ≥7
 
 * Heavy Usage: 48.5% of teens use their phones for 5+ hours daily
 
 * Usage Range: 0 to 11.5 hours per day
 
-### Demographics
-* Gender Distribution: Relatively balanced across Male (33.9%), Female (33.6%), and Other (32.6%)
-
-* Age Range: 13-19 years
-
-* Sample Size: 3,000 teenagers (simulated teenagers)
-
 * Average Addiction Score: 8.88/10
+
 
 ## Analysis Methods
 ### Clustering Analysis
 Optimal Clusters: 3 clusters identified using K-means
 
 * Cluster Distribution:
-Cluster 0: 993 teens (33.1%)
+Cluster 0: 1027 teens (34.2%)
 
-Cluster 1: 936 teens (31.2%)
+Cluster 1: 923 teens (30.8%)
 
-Cluster 2: 1,071 teens (35.7%)
+Cluster 2: 1,050 teens (35.0%)
 ### Statistical Testing
 
-Performed F-tests on key variables showing significant differences across clusters:
+Performed F-tests showing significant differences across all variables (p < 0.001):
 
-Daily Usage Hours (F=114.33, p<0.001)
+Family Communication (F=484.59)
 
-Sleep Hours (F=235.39, p<0.001)
+Depression Level (F=249.84)
 
-Family Communication (F=460.49, p<0.001)
+Screen Time Before Bed (F=197.02)
 
-Time on Social Media (F=126.89, p<0.001)
+Sleep Hours (F=184.23)
+
+Daily Usage Hours (F=92.59)
 
 ### Machine Learning Models
-Three different sampling techniques were employed to handle class imbalance:
+Four different approaches were employed to handle severe class imbalance:
 
-* SMOTE (Synthetic Minority Oversampling Technique)
+* 1- Cost-Sensitive Learning
 
-Accuracy: 91.2% ± 0.8%
+Cross-Validation: Accuracy: 85.1%, F1-Macro: 30.7%, ROC-AUC: 94.9%
 
-F1-Macro: 85.2% ± 1.3%
+Feature Importance-SHAP Correlation: 0.88 (robust)
 
-ROC-AUC: 97.5% ± 0.5%
+Best for production use - most reliable results
 
-* SMOTEENN (SMOTE + Edited Nearest Neighbors)
+* 2- SMOTE (Synthetic Minority Oversampling)
 
-Accuracy: 98.1% ± 0.3%
+Cross-Validation: Accuracy: 91.7%, F1-Macro: 91.1%, ROC-AUC: 98.3%
 
-F1-Macro: 83.4% ± 4.1%
+Feature Importance-SHAP Correlation: 0.996 (high due to synthetic data)
 
-ROC-AUC: 99.0% ± 0.6%
+Good minority class recall improvement
 
-* ADASYN (Adaptive Synthetic Sampling)
+* 3- SMOTEENN (SMOTE + Edited Nearest Neighbors)
 
-Accuracy: 93.9% ± 0.3%
+Cross-Validation: Accuracy: 92.8%, F1-Macro: 92.1%, ROC-AUC: 98.8%
 
-F1-Macro: 75.6% ± 1.7%
+Feature Importance-SHAP Correlation: 0.996 (high due to synthetic data)
 
-ROC-AUC: 98.4% ± 0.1%
+Best overall threshold optimization results
+
+* 4- ADASYN (Adaptive Synthetic Sampling)
+
+Cross-Validation: Accuracy: 91.1%, F1-Macro: 90.8%, ROC-AUC: 98.2%
+
+Feature Importance-SHAP Correlation: 0.997 (high due to synthetic data)
+
+Adaptive sampling strategy
 
 ### Feature Importance
 
-* Top Predictive Features (SMOTE Model):
+* Top Predictive Features (consistent across all models):
 
-Daily Usage Hours (32.8%) - Most important predictor
+Daily Usage Hours (34-44%) - Primary predictor
 
-Time on Social Media (13.2%)
+Time on Social Media (13-16%)
 
-Phone Checks Per Day (12.1%)
+Phone Checks Per Day (12-17%)
 
-Time on Gaming (10.4%)
+Time on Gaming (7-10%)
 
-Sleep Hours (8.5%)
+Sleep Hours (6-7%)
 
-Secondary Factors:
+### Model Performance & Limitations
 
-Exercise Hours (4.1%)
+## Overfitting Analysis
 
-Screen Time Before Bed (3.9%)
+Cost-Sensitive Approach: FI-SHAP correlation = 0.88 (robust, recommended)
 
-Depression Level (3.3%)
+Sampling Methods: FI-SHAP correlation = 0.996+ (high correlation due to synthetic data generation)
 
-Social Interactions (3.1%)
+## Why High Correlation in Sampling Methods?
 
-Family Communication (2.9%)
+1-Synthetic data generation creates similar feature patterns
 
-### Model Performance
-All models show excellent performance with high correlation between Feature Importance and SHAP values:
+2-SMOTE/ADASYN algorithms interpolate between existing samples
 
-* SMOTE: 99.11% correlation
-* SMOTEENN: 98.68% correlation
-* ADASYN: 99.17% correlation
-### Technical Implementation
-* Data Processing
+3-This leads to artificially consistent feature importance rankings
 
-* Principal Component Analysis (PCA) for dimensionality reduction
+4-Known limitation of oversampling techniques, especially with small minority classes
 
-* Cross-validation with stratified sampling
+## Model Selection
 
-* Multiple sampling techniques to handle class imbalance
+* Cost-sensitive approach provides most robust results for production deployment
 
-* Evaluation Metrics
+* Sampling methods are valuable for improving minority class detection but should be interpreted with caution
 
-* Accuracy, Precision, Recall, F1-Score
+* Threshold optimization significantly improves rare class prediction
+
+* Consider ensemble approaches combining multiple methods for optimal results
+
+### Technical Implementations
+
+## Data Processing
+
+* Principal Component Analysis (PCA) for clustering
+
+* Stratified cross-validation to maintain class distribution
+
+* Multiple resampling techniques with regularization to prevent overfitting
+
+* Threshold optimization for minority class improvement
+
+## Model Configuration
+
+```python
+RandomForestClassifier(
+    n_estimators=100,
+    max_depth=5,
+    min_samples_split=20,
+    min_samples_leaf=15,
+    max_features=2,
+    max_samples=0.5,
+    class_weight={0: 5, 1: 1, 2: 1} # Cost-sensitive weights
+    #class_weight = {0: 3, 1: 2, 2: 1} for sampling methods (light class weighting)
+)
+```
+
+## Evaluation Metrics
+
+* Accuracy, Precision, Recall, F1-Score (Macro & Weighted)
 
 * ROC-AUC for multi-class classification
 
 * SHAP values for model interpretability
 
-### Addiction Level Distribution
+* Feature Importance correlation analysis
 
-Low (1-4): 42 teens (1.4%)
+### Key Risk Factors Identified
 
-Medium (4-7): 404 teens (13.5%)
+1-Daily Usage Hours: Primary addiction indicator
 
-High (7-10): 2,554 teens (85.1%)
+2-Social Media Time: Strong behavioral predictor
 
-### Implications
-* Key Risk Factors:
+3-Phone Check Frequency: Compulsive behavior marker
 
-High Daily Usage: Primary indicator of addiction
+4-Gaming Duration: Entertainment addiction component
 
-Social Media Consumption: Strong secondary predictor
+5-Sleep Pattern Disruption: Health impact indicator
 
-Frequent Phone Checking: Behavioral indicator
-
-Gaming Time: Significant contributor
-
-Sleep Disruption: Important health-related factor
 
 ### Recommendations:
 
@@ -161,25 +187,30 @@ Prerequisites
 pip install -r requirements.txt
 ```
 
+```bash
+pip install pandas numpy scikit-learn matplotlib seaborn shap imbalanced-learn
+```
+
 python
 ```bash
 python teen_addiction_analysis.py
 ```
 ### Data Features
-* The analysis includes 20+ features covering:
+* The analysis includes 12 core features covering:
 
-Usage Patterns: Daily hours, phone checks, screen time
+Usage Patterns: Daily hours, phone checks, screen time before bed
 
-Content Consumption: Social media, gaming, education time
+Content Consumption: Social media, gaming time
 
-Health Metrics: Sleep hours, exercise, anxiety levels
+Psychological Factors: Anxiety level, depression level, self esteem
+
+Health Metrics: Sleep hours, exercise hours
 
 Social Factors: Family communication, social interactions
 
-Demographics: Age, gender, location
 
 ### 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome,  please feel free to submit a Pull Request.
 
 ### 📄 License
 This project is licensed under the MIT License.

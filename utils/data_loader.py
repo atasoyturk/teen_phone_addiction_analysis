@@ -1,5 +1,7 @@
 import pandas as pd
 
+path = r"C:\Users\User\Desktop\lectures\staj\machine_learning\teen_phone_addiction\data\teen_phone_addiction_dataset.csv"
+
 def load_data(path):
     try:
         df = pd.read_csv(path)
@@ -9,7 +11,7 @@ def load_data(path):
         return None
     
 
-df = load_data(r"C:\Users\User\Desktop\lectures\teen_phone_addiction\data\teen_phone_addiction_dataset.csv")
+df = load_data(path)
 print(f"Data loaded successfully: {df is not None}")
 
 

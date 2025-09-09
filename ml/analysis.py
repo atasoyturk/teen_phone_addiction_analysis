@@ -6,28 +6,26 @@ from utils.plots import classification_plots, cluster_plots
 
 
 
-def standardization_info(path, best_k):
-    df_pca, cluster_means = standardization_process(path, n_clusters=best_k)
+def standardization_info(df_clustered, cluster_means):
     print("Cluster Means:\n", cluster_means)
-    
+
     print("\nCluster Distribution:")
-    distribution = df_pca['Cluster'].value_counts().sort_index()
+    distribution = df_clustered['Cluster'].value_counts().sort_index()
     print(f"\n{distribution}")
-    
+
     if (distribution < 2).any():
         print("Warning: One or more clusters have fewer than 2 samples, which may cause issues in F-test.")
 
     
-def f_test(path, best_k):
-    
-    addiction_df = addiction_df_create(path)
+def f_test(path, features, best_k, df_clustered):
+
+    addiction_df = addiction_df_create(path, features)
     #addiction_df = normalize_features(addiction_df)
-    
+
     if addiction_df.isna().any().any():
         print("Warning: Missing values detected in the dataset. Filling with mean...")
         addiction_df = addiction_df.fillna(addiction_df.mean(numeric_only=True))
-    
-    df_clustered, _ = standardization_process(path, n_clusters=best_k)
+
     addiction_df['Cluster'] = df_clustered['Cluster']
 
     features = [
@@ -46,28 +44,27 @@ def f_test(path, best_k):
     ]
 
     print("F-test results:\n")
-    
+
     for feat in features:
         clusters_data = [addiction_df[addiction_df['Cluster'] == i][feat] for i in range(best_k)]
-    
+
         f_stat, p_val = f_oneway(*clusters_data)
         print(f"{feat:25}: F={f_stat:.2f}, p={p_val:.2e}\n")
         
 
-def analyze_and_plot_results(results, X_train, X_test, y_train, y_test):
+def analyze_and_plot_results(results, X_train, X_test, y_train, y_test, features):
 
-    path = r"C:\Users\User\Desktop\lectures\teen_phone_addiction\data\teen_phone_addiction_dataset.csv"
-    
+    path = r"C:\Users\User\Desktop\lectures\staj\machine_learning\teen_phone_addiction\data\teen_phone_addiction_dataset.csv"
+
     for name, res in results.items():
         fi_df = res['feature_importance']
         fi_values = pd.Series(fi_df['Importance'].values, index=fi_df['Feature'])
 
         shap_magnitude = res['shap_magnitude']
-        shap_series = pd.Series(shap_magnitude, index=fi_df['Feature'])  
+        shap_series = pd.Series(shap_magnitude, index=fi_df['Feature'])
 
         correlation = fi_values.corr(shap_series)
         print(f"\n{name} - Correlation (FI (Feature Importance)-SHAP Magnitude): {correlation:.4f}")
 
-        classification_plots(X_train, X_test, y_train, y_test, method_name=name)
+        classification_plots(X_train, X_test, y_train, y_test, method_name=name, feature_importance=fi_df, shap_magnitude=shap_magnitude)
     
-    cluster_plots(path)

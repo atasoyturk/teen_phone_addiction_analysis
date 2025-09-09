@@ -3,7 +3,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import seaborn as sns
 
 def addiction_df_create(path, features):
@@ -22,7 +22,10 @@ def feature_corr(df, features):
     #firstly, i should check the correlations between addiction metrics, if there exist higher values then 0.8, the metrics with high f score should be stay in df
     corr = df[features].corr()
     sns.heatmap(corr, annot=True, cmap='coolwarm', fmt= ".2f")
-    plt.title("Addiction Features correlation matrix")
+    plt.title('Addiction Metrics Correlation Matrix', fontsize=14, pad=20)
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
+    plt.tight_layout()
     plt.show()
     
     #after the graph, i see all of them have unique distinctiveness, so addiction metrics stay same for now.
@@ -30,8 +33,13 @@ def feature_corr(df, features):
 
 
 def feature_histogram(addiction_df, features):
-    
-    addiction_df[features].hist(bins=20, figsize=(12, 8))
+        
+    df = addiction_df.copy()  # ← Bu satır başta olmalı
+    df[features].hist(bins=20, figsize=(12, 8))
+        
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
+    plt.tight_layout()
     plt.show()
     #non of them right skewed graph, no need to log1p transformation.
 
@@ -70,7 +78,8 @@ def apply_pca(df, n_components=2):
     
     pca_columns = [f'PC{i+1}' for i in range(n_components)]
     df_pca = pd.DataFrame(df_pca, columns=pca_columns, index=df.index)
-
+    
+    
     return df_pca, pca, scaler
 
 
